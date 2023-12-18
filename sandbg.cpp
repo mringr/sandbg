@@ -2,6 +2,8 @@
 #include <unistd.h>
 #include <sys/ptrace.h>
 
+#include "include/debugger.hpp"
+
 int main(int argc, char *argv[])
 {
     if (argc < 2) {
@@ -23,6 +25,8 @@ int main(int argc, char *argv[])
 
         default:
             std::cout << "In the parent process. Child pid = " << pid << "\n";
+            Debugger dbg {prog, pid};
+            dbg.run();
     }
     return 0;
 }
