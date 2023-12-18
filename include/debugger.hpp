@@ -40,7 +40,7 @@ class Debugger {
             auto args = Helpers::split(line, ' ');
             auto command = args[0];
 
-            if(Helpers::is_prefix(line, "continue")) {
+            if(Helpers::is_prefix(command, "continue")) {
                 continue_execution();
             }
             else {
