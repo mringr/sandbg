@@ -6,15 +6,16 @@
 #define BREAKPOINT_HPP
 
 #include <iostream>
-#include <bits/ptrace-shared.h>
 #include <sys/ptrace.h>
 
 class Breakpoint {
     public:
-        Breakpoint(pid_t pid, std::intptr_t addr)
-        : m_pid(pid), m_addr(addr) {}
+        Breakpoint() = default;
 
-        bool is_enabled() const { return m_is_enabled; }
+        Breakpoint(pid_t pid, std::intptr_t addr)
+        : m_pid(pid), m_addr(addr), m_enabled(false), m_saved_data{} {}
+
+        bool is_enabled() const { return m_enabled; }
 
         std::intptr_t get_address() const { return m_addr; }
 
@@ -32,20 +33,20 @@ class Breakpoint {
             //pokedata and replace the first byte to 0xcc(int3)
             ptrace(PTRACE_POKEDATA, m_pid, m_addr, modified_instr);
 
-            m_is_enabled = true;
+            m_enabled = true;
         }
 
         void disable() {
             auto data = ptrace(PTRACE_PEEKDATA, m_pid, m_addr, nullptr);
             uint64_t instr_to_restore = ((data & ~0xFF) | m_saved_data);
             ptrace(PTRACE_POKEDATA, m_pid, m_addr, instr_to_restore);
-            m_is_enabled = false;
+            m_enabled = false;
         }
 
     private:
         pid_t m_pid;
         std::intptr_t m_addr;
-        bool m_is_enabled;
+        bool m_enabled;
         uint8_t m_saved_data;
 
 };
