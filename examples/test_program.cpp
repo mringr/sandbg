@@ -9,5 +9,7 @@ int main() {
     int b = 20;
 
     int result = a + b;
+
+    std::cerr << "a + b = " << result;
     return result;
 }

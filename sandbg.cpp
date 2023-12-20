@@ -1,6 +1,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <sys/ptrace.h>
+#include <sys/personality.h>
 
 #include "include/debugger.hpp"
 
@@ -20,8 +21,11 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
 
         case 0:
+            personality(ADDR_NO_RANDOMIZE);
             ptrace(PTRACE_TRACEME, pid, nullptr, nullptr);
             execl(prog, prog, nullptr);
+            std::cerr << "Exec returned error\n";
+            exit(EXIT_FAILURE);
 
         default:
             std::cout << "In the parent process. Child pid = " << pid << "\n";
