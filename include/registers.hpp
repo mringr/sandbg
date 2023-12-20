@@ -7,6 +7,10 @@
 #include <array>
 #include <cstddef>
 #include <string>
+#include <bits/ptrace-shared.h>
+#include <sys/ptrace.h>
+
+#include <sys/user.h>
 
 namespace sandbg {
     /* maintaining the same register order as in user.h */
@@ -59,6 +63,29 @@ namespace sandbg {
             { reg::gs, 55, "gs" },
         }
     };
+
+    uint64_t get_register_value(pid_t pid, reg r) {
+        user_regs_struct regs;
+        ptrace(PTRACE_GETREGS, pid, nullptr, &regs);
+
+        const auto it = std::find_if(std::begin(g_register_descriptors),
+                                std::end(g_register_descriptors),
+                                [r](auto&& reg_desc) { return reg_desc.r == r; }
+            );
+        //Euh!!TODO: handle case for when it is end()
+        return *(reinterpret_cast<uint64_t*>(&regs + (it - std::begin(g_register_descriptors))));
+    }
+
+    void set_register_value(pid_t pid, reg r, uint64_t value) {
+        user_regs_struct regs;
+        ptrace(PTRACE_GETREGS, pid, nullptr, &regs);
+
+        auto it = std::find_if(std::begin(g_register_descriptors),
+                                    std::end(g_register_descriptors),
+                                    [r](auto&& rd) { return r == rd.r; });
+        *(reinterpret_cast<uint64_t*>(&regs + it - std::begin(g_register_descriptors))) = value;
+        ptrace(PTRACE_SETREGS, pid, nullptr, &regs);
+    }
 }
 
 #endif //REGISTERS_HPP
