@@ -6,6 +6,8 @@
 #define REGISTERS_HPP
 #include <array>
 #include <cstddef>
+#include <iomanip>
+#include <iostream>
 #include <string>
 #include <bits/ptrace-shared.h>
 #include <sys/ptrace.h>
@@ -73,7 +75,7 @@ namespace sandbg {
                                 [r](auto&& reg_desc) { return reg_desc.r == r; }
             );
         //Euh!!TODO: handle case for when it is end()
-        return *(reinterpret_cast<uint64_t*>(&regs + (it - std::begin(g_register_descriptors))));
+        return *(reinterpret_cast<uint64_t*>(&regs) + (it - std::begin(g_register_descriptors)));
     }
 
     void set_register_value(pid_t pid, reg r, uint64_t value) {
@@ -83,8 +85,43 @@ namespace sandbg {
         auto it = std::find_if(std::begin(g_register_descriptors),
                                     std::end(g_register_descriptors),
                                     [r](auto&& rd) { return r == rd.r; });
-        *(reinterpret_cast<uint64_t*>(&regs + it - std::begin(g_register_descriptors))) = value;
+        *(reinterpret_cast<uint64_t*>(&regs) + (it - std::begin(g_register_descriptors))) = value;
         ptrace(PTRACE_SETREGS, pid, nullptr, &regs);
+    }
+
+    uint64_t get_register_value_from_dwarf_register(pid_t pid, int dwarf_reg_num) {
+        user_regs_struct regs;
+        ptrace(PTRACE_GETREGS, pid, nullptr, &regs);
+
+        auto it = std::find_if(std::begin(g_register_descriptors),
+                                    std::end(g_register_descriptors),
+                                    [dwarf_reg_num](auto&& rd) { return rd.dwarf_r == dwarf_reg_num;});
+        if(it == std::end(g_register_descriptors)) {
+            throw std::__throw_out_of_range("Invalid dwarf number");
+        }
+
+        return get_register_value(pid, it->r);
+    }
+
+    std::string get_register_name(reg r) {
+        auto it = std::find_if(std::begin(g_register_descriptors),
+                                std::end(g_register_descriptors),
+                                [r](auto&& rd){ return r == rd.r; });
+        return it->name;
+    }
+
+    reg get_register_from_name(const std::string& name) {
+        auto it = std::find_if(std::begin(g_register_descriptors),
+                                    std::end(g_register_descriptors),
+                                    [name](auto&& rd){ return name == rd.name; });
+        return it->r;
+    }
+
+    void dump_registers(pid_t pid) {
+        for(auto& reg : g_register_descriptors) {
+            std::cout << reg.name << " 0x" << std::setfill('0') << std::setw(16)
+            << std::hex << get_register_value(pid, reg.r) << "\n";
+        }
     }
 }
 
