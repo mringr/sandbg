@@ -16,6 +16,7 @@
 #include "breakpoint.hpp"
 
 #include "helpers.hpp"
+#include "registers.hpp"
 
 class Debugger {
     public:
@@ -61,6 +62,29 @@ class Debugger {
                     set_breakpoint_at_address(std::stol(addr, nullptr, 16));
                 }
             }
+            else if (Helpers::is_prefix(command, "register")) {
+                if (Helpers::is_prefix(args[1], "dump")) {
+                    sandbg::dump_registers(m_pid);
+                }
+                else if (Helpers::is_prefix(args[1], "read")) {
+                    std::cout << sandbg::get_register_value(m_pid, sandbg::get_register_from_name(args[2])) << "\n";
+                }
+                else if (Helpers::is_prefix(args[1], "write")) {
+                    std::string val {args[3], 2};
+                    sandbg::set_register_value(m_pid, sandbg::get_register_from_name(args[2]), std::stol(val, 0, 16));
+                }
+            }
+            else if (Helpers::is_prefix(command, "memory")) {
+                std::string addr { args[2], 2};
+
+                if (Helpers::is_prefix(args[1], "read")) {
+                    std::cout << read_memory(std::stol(addr, 0, 16)) << "\n";
+                }
+                else if (Helpers::is_prefix(args[1], "write")) {
+                    std::string val{args[3], 2};
+                    write_memory(std::stol(addr, 0, 16), std::stol(args[3], 0, 16));
+                }
+            }
             else {
                 std::cerr << "Unknown command\n" ;
             }
@@ -72,6 +96,14 @@ class Debugger {
             auto options = 0;
 
             waitpid(m_pid, &wait_status, options);
+        }
+
+        uint64_t read_memory(const uint64_t address) const {
+            return ptrace(PTRACE_PEEKDATA, m_pid, address, nullptr);
+        }
+
+        void write_memory (const uint64_t address, const uint64_t value) const {
+            ptrace(PTRACE_POKEDATA, m_pid, address, value);
         }
 };
 #endif //DEBUGGER_HPP

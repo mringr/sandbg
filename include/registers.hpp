@@ -9,7 +9,6 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
-#include <bits/ptrace-shared.h>
 #include <sys/ptrace.h>
 
 #include <sys/user.h>
@@ -66,7 +65,7 @@ namespace sandbg {
         }
     };
 
-    uint64_t get_register_value(pid_t pid, reg r) {
+    static uint64_t get_register_value(pid_t pid, reg r) {
         user_regs_struct regs;
         ptrace(PTRACE_GETREGS, pid, nullptr, &regs);
 
@@ -78,7 +77,7 @@ namespace sandbg {
         return *(reinterpret_cast<uint64_t*>(&regs) + (it - std::begin(g_register_descriptors)));
     }
 
-    void set_register_value(pid_t pid, reg r, uint64_t value) {
+    static void set_register_value(pid_t pid, reg r, const uint64_t value) {
         user_regs_struct regs;
         ptrace(PTRACE_GETREGS, pid, nullptr, &regs);
 
@@ -97,7 +96,7 @@ namespace sandbg {
                                     std::end(g_register_descriptors),
                                     [dwarf_reg_num](auto&& rd) { return rd.dwarf_r == dwarf_reg_num;});
         if(it == std::end(g_register_descriptors)) {
-            throw std::__throw_out_of_range("Invalid dwarf number");
+            throw std::out_of_range("Invalid dwarf number");
         }
 
         return get_register_value(pid, it->r);
@@ -117,7 +116,7 @@ namespace sandbg {
         return it->r;
     }
 
-    void dump_registers(pid_t pid) {
+    static void dump_registers(pid_t pid) {
         for(auto& reg : g_register_descriptors) {
             std::cout << reg.name << " 0x" << std::setfill('0') << std::setw(16)
             << std::hex << get_register_value(pid, reg.r) << "\n";
