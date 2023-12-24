@@ -11,6 +11,8 @@
 #include <sys/wait.h>
 
 #include <linenoise.h>
+#include <dwarf++.hh>
+
 #include <unordered_map>
 
 #include "breakpoint.hpp"

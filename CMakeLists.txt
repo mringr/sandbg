@@ -3,8 +3,9 @@ project(sandbg)
 
 set(CMAKE_CXX_STANDARD 20)
 
+include_directories(/usr/local/include/libelfin/elf/ /usr/local/include/libelfin/dwarf/)
 add_executable(sandbg sandbg.cpp)
-target_link_libraries(sandbg linenoise)
+target_link_libraries(sandbg linenoise /usr/local/lib/libelf++.so /usr/local/lib/libdwarf++.so)
 
 add_executable(test_program examples/test_program.cpp)
 set_target_properties(test_program PROPERTIES COMPILE_FLAGS "-g -O0")
