@@ -10,6 +10,12 @@ int main() {
 
     int result = a + b;
 
-    std::cerr << "a + b = " << result;
+    std::cerr << "a + b = " << result << "\n";
+
+    std::cerr << "a - b = " << a - b << "\n";
+
+    std::cerr << "a * b = " << a * b << "\n";
+
+
     return result;
 }

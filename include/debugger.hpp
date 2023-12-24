@@ -43,6 +43,14 @@ class Debugger {
             m_breakpoints[addr] = breakpoint;
         }
 
+        uint64_t read_memory (uint64_t addr) const {
+            return ptrace(PTRACE_PEEKDATA, m_pid, addr, nullptr);
+        }
+
+        void write_memory(uint64_t addr, uint64_t data) const {
+            ptrace(PTRACE_POKEDATA, m_pid, addr, data);
+        }
+
     private:
         std::string m_program_name;
         pid_t m_pid;
@@ -91,19 +99,41 @@ class Debugger {
         }
 
         void continue_execution() {
+            step_over_breakpoint();
             ptrace(PTRACE_CONT, m_pid, nullptr, nullptr);
-            int wait_status;
-            auto options = 0;
+            wait_for_signal();
+        }
 
+        std::intptr_t get_pc() const {
+            return static_cast<std::intptr_t>(get_register_value(m_pid, sandbg::reg::rip));
+        }
+
+        void set_pc(const uint64_t pc) const {
+            sandbg::set_register_value(m_pid, sandbg::reg::rip, pc);
+        }
+
+        void wait_for_signal() const {
+            int wait_status;
+            constexpr auto options = 0;
             waitpid(m_pid, &wait_status, options);
         }
 
-        uint64_t read_memory(const uint64_t address) const {
-            return ptrace(PTRACE_PEEKDATA, m_pid, address, nullptr);
-        }
+        void step_over_breakpoint() {
+            /* Since PC will increment after execution of an instruction
+             * for a breakpoint, the instr will be a 1 byte int3 instruction
+             */
+            auto previous_instr_addr = get_pc() - 1;
 
-        void write_memory (const uint64_t address, const uint64_t value) const {
-            ptrace(PTRACE_POKEDATA, m_pid, address, value);
+            /* check if instruction is a breakpoint. NO OP otherwise */
+            if (m_breakpoints.contains(previous_instr_addr)) {
+                set_pc(previous_instr_addr);
+                Breakpoint& bp = m_breakpoints[previous_instr_addr];
+                bp.disable();
+                ptrace(PTRACE_SINGLESTEP, m_pid, nullptr, nullptr);
+                wait_for_signal();
+                bp.enable();
+            }
+
         }
 };
 #endif //DEBUGGER_HPP
