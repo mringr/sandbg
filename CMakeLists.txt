@@ -8,3 +8,7 @@ target_link_libraries(sandbg linenoise)
 
 add_executable(test_program examples/test_program.cpp)
 set_target_properties(test_program PROPERTIES COMPILE_FLAGS "-g -O0")
+
+add_executable(hello_world examples/hello_world.cpp
+        examples/hello_world.cpp)
+set_target_properties(hello_world PROPERTIES COMPILE_FLAGS "-g -O0")
