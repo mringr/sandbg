@@ -7,13 +7,14 @@
 
 #include <iostream>
 #include <string>
+#include <unordered_map>
 #include <sys/ptrace.h>
 #include <sys/wait.h>
+#include <fcntl.h>
 
-#include <linenoise.h>
 #include <dwarf++.hh>
-
-#include <unordered_map>
+#include <elf++.hh>
+#include <linenoise.h>
 
 #include "breakpoint.hpp"
 
@@ -23,7 +24,12 @@
 class Debugger {
     public:
         Debugger(std::string program_name, pid_t pid)
-        : m_program_name(std::move(program_name)), m_pid(pid) {}
+        : m_program_name(std::move(program_name)), m_pid(pid) {
+            auto fd = open(program_name.c_str(), O_RDONLY);
+
+            m_elf = elf::elf{elf::create_mmap_loader(fd)};
+            m_dwarf = dwarf::dwarf{dwarf::elf::create_loader(m_elf)};
+        }
 
         void run() {
             int wait_status;
@@ -57,6 +63,9 @@ class Debugger {
         std::string m_program_name;
         pid_t m_pid;
         std::unordered_map<std::intptr_t, Breakpoint> m_breakpoints;
+
+        dwarf::dwarf m_dwarf;
+        elf::elf m_elf;
 
         void handle_command(const std::string& line) {
             auto args = Helpers::split(line, ' ');
@@ -135,7 +144,8 @@ class Debugger {
                 wait_for_signal();
                 bp.enable();
             }
-
         }
+
+        dwarf::die
 };
 #endif //DEBUGGER_HPP
