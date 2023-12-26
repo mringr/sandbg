@@ -17,3 +17,7 @@ set_target_properties(hello_world PROPERTIES COMPILE_FLAGS "-g -gdwarf-4 -O0")
 add_executable(elfin_eg_dump_lines examples/elfin_eg_dump_lines.cpp)
 set_target_properties(elfin_eg_dump_lines PROPERTIES COMPILE_FLAGS "-g -O0")
 target_link_libraries(elfin_eg_dump_lines /usr/local/lib/libelf++.so /usr/local/lib/libdwarf++.so)
+
+add_executable(elfin_eg_dump_internals examples/elfin_eg_dump_internals.cpp)
+set_target_properties(elfin_eg_dump_internals PROPERTIES COMPILE_FLAGS "-g -O0")
+target_link_libraries(elfin_eg_dump_internals /usr/local/lib/libelf++.so /usr/local/lib/libdwarf++.so)

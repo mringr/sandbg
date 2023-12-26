@@ -29,6 +29,7 @@ int main (int argc, char *argv[]) {
     int fd = open(argv[1], O_RDONLY);
     if (fd < 0) {
         std::cerr << argv[1] << " : " << strerror(errno) << "\n";
+        return 1;
     }
 
     elf::elf _elf {elf::create_mmap_loader(fd)};
@@ -36,11 +37,8 @@ int main (int argc, char *argv[]) {
 
 
     for(auto& cu : _dwarf.compilation_units()) {
-        //std::cout << "--- <" << std::hex << (unsigned int)cu.get_section_offset() << ">\n";
-        printf("--- <%x>\n", (unsigned int)cu.get_section_offset());
-        cu.get_line_table();
+        std::cout << "--- <" << std::hex << (unsigned int)cu.get_section_offset() << ">\n";
         dump_line_table(cu.get_line_table());
-        printf("\n");
     }
 
     return 0;
