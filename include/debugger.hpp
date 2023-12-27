@@ -26,7 +26,12 @@ class Debugger {
     public:
         Debugger(std::string program_name, pid_t pid)
         : m_program_name(std::move(program_name)), m_pid(pid) {
-            auto fd = open(program_name.c_str(), O_RDONLY);
+            auto fd = open(m_program_name.c_str(), O_RDONLY);
+
+            if (fd < 0) {
+                std::cerr << "Invalid program name\n";
+                throw std::invalid_argument("Invalid program name");
+            }
 
             m_elf = elf::elf{elf::create_mmap_loader(fd)};
             m_dwarf = dwarf::dwarf{dwarf::elf::create_loader(m_elf)};
